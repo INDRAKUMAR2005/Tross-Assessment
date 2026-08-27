@@ -15,8 +15,8 @@ class Config:
     PORT = int(os.getenv("PORT", "8000"))
     
     # LinkedIn Authentication via cookies (Recommended)
-    LI_AT = os.getenv("LINKEDIN_LI_AT")
-    JSESSIONID = os.getenv("LINKEDIN_JSESSIONID")
+    LI_AT = os.getenv("LINKEDIN_LI_AT", "").strip().strip('"').strip("'") or None
+    JSESSIONID = os.getenv("LINKEDIN_JSESSIONID", "").strip().strip('"').strip("'") or None
     
     # LinkedIn Authentication via credentials (Fallback)
     USERNAME = os.getenv("LINKEDIN_USERNAME")
