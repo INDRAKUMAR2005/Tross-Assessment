@@ -2,6 +2,11 @@
 
 A professional, self-hosted API that accepts a LinkedIn profile URL and returns structured profile information as clean JSON. This API reverse-engineers LinkedIn's internal "Voyager" API endpoints using cookie-based authentication, bypassing complex browser-automation systems (like Puppeteer/Selenium) and returning clean data directly from LinkedIn's internal GraphQL/REST services.
 
+## 🌐 Live API Demo
+The API is deployed and accessible publicly at:
+* **Live Base URL**: `https://tross-assessment.vercel.app`
+* **Interactive API Documentation (Swagger)**: `https://tross-assessment.vercel.app/docs`
+
 ## Features
 * **URL Parsing**: Automatically extracts LinkedIn profile public IDs from standard URLs.
 * **Rich Structure**: Returns name, headline, location, about, experience, education, skills, certifications, languages, projects, volunteer work, honors, and contact details.
