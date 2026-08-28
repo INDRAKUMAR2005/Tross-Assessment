@@ -8,7 +8,8 @@
 **High-Performance, Zero-Browser LinkedIn Profile Normalisation API**
 
 ### Description
-A production-grade web service built on FastAPI, HTTPX, and Pydantic v2 designed to query and normalize LinkedIn profiles directly over HTTP. By reverse-engineering LinkedIn's internal "Voyager Dash" endpoints, the API avoids the high resource overhead, slow execution, and susceptibility to CAPTCHAs associated with browser-automation frameworks (such as Selenium, Playwright, or Puppeteer). The application flattens deeply nested REST.li payloads into clean, standardized JSON objects covering work history, education, skills, certifications, languages, volunteer history, and contact details.
+A Python-based API built with FastAPI and HTTPX that parses and normalizes LinkedIn profiles into structured JSON. It interfaces directly with HTTP endpoints using session credentials to fetch and structure data sections including experience, education, skills, certifications, languages, and contact information.
+
 
 ### Theme
 **Developer Tools & API Integration / Web Scraping**
