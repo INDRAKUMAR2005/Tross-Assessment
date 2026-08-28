@@ -1,17 +1,6 @@
-from pydantic import BaseModel, Field, HttpUrl
+# app/models/response.py
+from pydantic import BaseModel, Field
 from typing import List, Optional
-
-# --- Request Schemas ---
-
-class ProfileRequest(BaseModel):
-    profile_url: str = Field(
-        ..., 
-        description="The full LinkedIn profile URL (e.g. https://www.linkedin.com/in/williamhgates/)",
-        examples=["https://www.linkedin.com/in/williamhgates/"]
-    )
-
-
-# --- Response Schemas ---
 
 class DateModel(BaseModel):
     year: Optional[int] = None
@@ -98,54 +87,3 @@ class ProfileResponse(BaseModel):
 
     class Config:
         populate_by_name = True
-        json_schema_extra = {
-            "example": {
-                "public_id": "williamhgates",
-                "urn_id": "ACoAAA8WYHgB-AW9gDq...",
-                "first_name": "Bill",
-                "last_name": "Gates",
-                "full_name": "Bill Gates",
-                "headline": "Co-chair, Bill & Melinda Gates Foundation",
-                "location": "Seattle, Washington, United States",
-                "about": "Co-chair of the Bill & Melinda Gates Foundation...",
-                "profile_image_url": "https://media.licdn.com/dms/image/...",
-                "experience": [
-                    {
-                        "company_name": "Bill & Melinda Gates Foundation",
-                        "title": "Co-chair",
-                        "location": "Seattle, WA",
-                        "time_period": {
-                            "startDate": {"year": 2000, "month": 1}
-                        }
-                    }
-                ],
-                "education": [
-                    {
-                        "school_name": "Harvard University",
-                        "degree": "Honorary Doctor of Laws",
-                        "time_period": {
-                            "startDate": {"year": 1973},
-                            "endDate": {"year": 1975}
-                        }
-                    }
-                ],
-                "skills": [
-                    {"name": "Philanthropy"},
-                    {"name": "Technology"}
-                ],
-                "certifications": [],
-                "languages": [
-                    {"name": "English", "proficiency": "Native or bilingual proficiency"}
-                ],
-                "projects": [],
-                "volunteer": [],
-                "honors": [],
-                "contact_info": {
-                    "email": None,
-                    "phone_numbers": [],
-                    "websites": ["https://www.gatesnotes.com"],
-                    "twitter": [],
-                    "birthdate": None
-                }
-            }
-        }

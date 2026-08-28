@@ -1,0 +1,102 @@
+{
+  "firstName": "Bill",
+  "lastName": "Gates",
+  "publicIdentifier": "williamhgates",
+  "urn": "ACoAAA8WYHgB-AW9gDq...",
+  "headline": "Co-chair, Bill & Melinda Gates Foundation",
+  "locationName": "Seattle, Washington, United States",
+  "summary": "Co-chair of the Bill & Melinda Gates Foundation...",
+  "displayPictureUrl": "https://media.licdn.com/dms/image/v2/...",
+  "experience": [
+    {
+      "companyName": "Bill & Melinda Gates Foundation",
+      "companyLogoUrl": "https://media.licdn.com/dms/image/...",
+      "title": "Co-chair",
+      "locationName": "Seattle, WA",
+      "description": "Working together to build a world where every person has the chance to live a healthy, productive life.",
+      "timePeriod": {
+        "startDate": {
+          "year": 2000,
+          "month": 1
+        },
+        "endDate": null
+      }
+    }
+  ],
+  "education": [
+    {
+      "schoolName": "Harvard University",
+      "schoolLogoUrl": "https://media.licdn.com/dms/image/...",
+      "degreeName": "Honorary Doctor of Laws",
+      "fieldOfStudy": null,
+      "description": null,
+      "timePeriod": {
+        "startDate": {
+          "year": 1973
+        },
+        "endDate": {
+          "year": 1975
+        }
+      }
+    }
+  ],
+  "skills": [
+    {
+      "name": "Philanthropy"
+    },
+    {
+      "name": "Software Development"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Certified Professional Scraper",
+      "authority": "Scraper Corp",
+      "licenseNumber": "CPS-12345",
+      "timePeriod": {
+        "startDate": {
+          "year": 2020,
+          "month": 5
+        }
+      },
+      "url": "https://cert.example.com/cps-12345"
+    }
+  ],
+  "languages": [
+    {
+      "name": "English",
+      "proficiency": "Native or bilingual proficiency"
+    }
+  ],
+  "projects": [
+    {
+      "name": "OS Development",
+      "description": "Developed desktop operating system.",
+      "url": "https://github.com/example/os"
+    }
+  ],
+  "volunteer": [
+    {
+      "role": "Adviser",
+      "companyName": "Charity Organisation",
+      "description": "Advising on green initiatives.",
+      "timePeriod": {
+        "startDate": {
+          "year": 2010,
+          "month": 3
+        }
+      }
+    }
+  ],
+  "honors": [
+    {
+      "title": "Knight Commander of the Order of the British Empire",
+      "issuer": "Queen Elizabeth II",
+      "description": "Honored for services to science and technology.",
+      "issueDate": {
+        "year": 2005,
+        "month": 3
+      }
+    }
+  ]
+}

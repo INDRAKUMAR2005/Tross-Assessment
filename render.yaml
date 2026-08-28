@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: linkedin-profile-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: API_KEY_ENABLED
+        value: "false"
+      - key: API_KEY
+        sync: false
+      - key: LINKEDIN_LI_AT
+        sync: false
+      - key: LINKEDIN_JSESSIONID
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO

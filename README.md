@@ -1,118 +1,116 @@
-# LinkedIn Profile Scraper API
+# LinkedIn Profile API
 
-A professional, self-hosted API that accepts a LinkedIn profile URL and returns structured profile information as clean JSON. This API reverse-engineers LinkedIn's internal "Voyager" API endpoints using cookie-based authentication, bypassing complex browser-automation systems (like Puppeteer/Selenium) and returning clean data directly from LinkedIn's internal GraphQL/REST services.
+A production-quality Python service built using FastAPI, HTTPX, and Pydantic v2. This project implements a direct, reverse-engineered HTTP integration targeting LinkedIn's internal endpoints to retrieve and normalize public profiles as structured JSON without using any web browsers or UI automation tools.
 
-## 🌐 Live API Demo
-The API is deployed and accessible publicly at:
-* **Live Base URL**: `https://tross-assessment.vercel.app`
-* **Interactive API Documentation (Swagger)**: `https://tross-assessment.vercel.app/docs`
+## Project Overview
 
-## Features
-* **URL Parsing**: Automatically extracts LinkedIn profile public IDs from standard URLs.
-* **Rich Structure**: Returns name, headline, location, about, experience, education, skills, certifications, languages, projects, volunteer work, honors, and contact details.
-* **Authentication Security**: Uses active session cookies (`li_at` and `JSESSIONID`) configured securely via environment variables to keep your credentials safe.
-* **Fast & Lightweight**: Built on **FastAPI** with **Pydantic** data models. No headless browser overhead.
-* **Auto-generated Documentation**: Interactive API testing playground available out-of-the-box (Swagger & Redoc).
+This repository contains the solution for the Tross hiring challenge. The system is designed to programmatically fetch LinkedIn user profiles by communicating directly over HTTP/HTTPS, bypassing standard browser-driven scrapers (e.g. Playwright, Selenium, or Puppeteer). This eliminates browser rendering overhead, reduces RAM utilization, and provides high-performance data normalization.
 
----
+## System Architecture
 
-## 🛠️ Local Setup & Installation
+The workflow follows a decoupled, sequential data flow:
 
-### Prerequisites
-* Python 3.10 or higher
-* An active LinkedIn account (to obtain session cookies)
-
-### 1. Clone & Set Up Directory
-Create a virtual environment and install the required Python packages:
-
-```bash
-# Create a virtual environment
-python -m venv venv
-
-# Activate the virtual environment
-# On Windows (Command Prompt)
-venv\Scripts\activate.bat
-# On Windows (PowerShell)
-.\venv\Scripts\activate.ps1
-# On Linux/macOS
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
+```
+Client (Consumer)
+     ↓  (HTTP POST /api/v1/linkedin/profile)
+FastAPI Router (app/api/profile.py)
+     ↓  (Validates URL & extracts Vanity ID)
+LinkedIn HTTP Client (app/linkedin/client.py using HTTPX)
+     ↓  (Direct HTTP GET with CSRF & session cookies)
+LinkedIn Voyager API Endpoint (identity/profiles/...)
+     ↓  (Raw REST.li JSON response)
+Response Parser (app/linkedin/parser.py)
+     ↓  (Flattens and normalizes data)
+Pydantic Schema (app/models/response.py)
+     ↓  (Validation & Serialization)
+Normalized JSON Response
 ```
 
-### 2. Configure Environment Variables
-Copy `.env.example` to `.env` and configure your settings:
+## Reverse Engineering Approach
 
-```bash
-cp .env.example .env
-```
+To achieve programmatic data extraction without browser automation, the HTTP communications of LinkedIn's frontend web application were mapped using network analysis tools:
 
-Open `.env` and configure:
-1. Open a desktop web browser (Chrome, Firefox, Safari), log in to [LinkedIn](https://www.linkedin.com).
-2. Open Developer Tools (press **F12** or **right-click -> Inspect**).
-3. Navigate to the **Application** tab (Chrome) or **Storage** tab (Firefox).
-4. Under **Cookies**, select `https://www.linkedin.com`.
-5. Copy values for:
-   * `li_at`: The main session token (a long string beginning with `AQED...`).
-   * `JSESSIONID`: The CSRF token (looks like `"ajax:xxxxxxxxxxxxxxxxx"`). Keep the double quotes in your `.env` value.
-6. Paste them into your `.env` file.
+1. **Endpoint Discovery**: The relevant profile endpoints were identified by monitoring request patterns under the network inspection panel. The primary resource views are located under LinkedIn's private Voyager REST API layer:
+   * Profile Details: `https://www.linkedin.com/voyager/api/identity/profiles/{public_id}/profileView`
+   * Contact Details: `https://www.linkedin.com/voyager/api/identity/profiles/{public_id}/profileContactInfo`
+2. **HTTP Method**: Standard `GET` operations are used to fetch the data.
+3. **Required Parameters**: No query parameters are mandatory. The request URL contains the profile's public vanity identifier (e.g. `williamhgates`) as a path parameter.
+4. **Required Headers**: The endpoint expects the following headers to pass system checks:
+   * `Csrf-Token`: Must match the CSRF value contained within the active session cookies.
+   * `X-RestLi-Protocol-Version`: Configured to `2.0.0` to comply with LinkedIn's Rest.li interface.
+   * `User-Agent`: Mimics a standard modern desktop browser.
+5. **Authentication**: Cookie-based authentication is utilized. The HTTP client attaches the `li_at` (session token) and `JSESSIONID` (CSRF token) values directly to the HTTP cookie headers.
+6. **Response Structure**: The raw JSON payload consists of nested structures containing properties for profiles, positions, academic history, endorsements, certifications, and languages.
+7. **Response Parsing**: The parser traverses the nested raw dictionaries, flattens date objects (`startDate` / `endDate` containing year/month pairs), maps attributes to standard keys, and handles missing properties gracefully.
+8. **Pagination Handling**: Profile subsections such as experience or education lists are retrieved in a single payload. If pagination is needed on larger lists, the client handles request sequences through secondary sub-resource queries.
+9. **Error Handling**: Custom domain exception handlers map HTTP response codes to structured API responses:
+   * `401 Unauthorized` -> `LINKEDIN_AUTH_FAILED`
+   * `403 Forbidden` -> `LINKEDIN_ACCESS_DENIED`
+   * `404 Not Found` -> `PROFILE_NOT_FOUND`
+   * `429 Too Many Requests` -> `LINKEDIN_RATE_LIMITED`
+   * Upstream schema changes -> `LINKEDIN_RESPONSE_CHANGED`
 
-### 3. Run the Server
-Start the development server using:
+## Why No Browser
 
-```bash
-uvicorn main:app --reload
-```
+The implementation communicates directly with LinkedIn endpoints using HTTP requests and does not use Selenium, Playwright, Puppeteer, Chromium, or browser automation. 
 
-By default, the server runs on `http://localhost:8000`. 
-Open `http://localhost:8000/docs` in your browser to view the interactive API documentation.
+By eliminating the browser environment entirely, the service achieves:
+* Startup times under 1 second.
+* Minimal memory footprint suitable for serverless functions.
+* Clean machine-to-machine data ingestion.
 
----
+## API Documentation
 
-## 📖 API Documentation
-
-### 1. Health Check
+### 1. Health Status
 * **Endpoint**: `GET /health`
-* **Description**: Verifies if the backend credentials/cookies are successfully loaded.
 * **Response**:
 ```json
 {
   "status": "healthy",
-  "message": "API is configured and ready.",
+  "message": "API configuration validated.",
   "auth_method_configured": "cookies"
 }
 ```
 
-### 2. Scrape LinkedIn Profile
-* **Endpoint**: `POST /api/v1/profile`
-* **Request Content-Type**: `application/json`
+### 2. Extract Profile
+* **Endpoint**: `POST /api/v1/linkedin/profile` (or fallback `/api/v1/profile`)
+* **Headers**: `Content-Type: application/json`
 * **Request Body**:
 ```json
 {
   "profile_url": "https://www.linkedin.com/in/williamhgates/"
 }
 ```
-* **Response Example (Clean & Structured JSON)**:
+
+## Example Request
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/linkedin/profile" \
+     -H "Content-Type: application/json" \
+     -d '{"profile_url": "https://www.linkedin.com/in/williamhgates/"}'
+```
+
+## Example Response
+
 ```json
 {
   "public_id": "williamhgates",
   "urn_id": "ACoAAA8WYHgB-AW9gDq...",
-  "first_name": "Bill",
-  "last_name": "Gates",
+  "firstName": "Bill",
+  "lastName": "Gates",
   "full_name": "Bill Gates",
   "headline": "Co-chair, Bill & Melinda Gates Foundation",
-  "location": "Seattle, Washington, United States",
-  "about": "Co-chair of the Bill & Melinda Gates Foundation...",
-  "profile_image_url": "https://media.licdn.com/dms/image/v2/...",
+  "geoLocationName": "Seattle, Washington, United States",
+  "summary": "Co-chair of the Bill & Melinda Gates Foundation...",
+  "displayPictureUrl": "https://media.licdn.com/dms/image/v2/...",
   "experience": [
     {
-      "company_name": "Bill & Melinda Gates Foundation",
-      "company_logo_url": "https://media.licdn.com/dms/image/...",
+      "companyName": "Bill & Melinda Gates Foundation",
+      "companyLogoUrl": "https://media.licdn.com/dms/image/...",
       "title": "Co-chair",
-      "location": "Seattle, WA",
+      "locationName": "Seattle, WA",
       "description": "Working together to build a world where every person has the chance to live a healthy, productive life.",
-      "time_period": {
+      "timePeriod": {
         "startDate": {
           "year": 2000,
           "month": 1
@@ -123,12 +121,12 @@ Open `http://localhost:8000/docs` in your browser to view the interactive API do
   ],
   "education": [
     {
-      "school_name": "Harvard University",
-      "school_logo_url": "https://media.licdn.com/dms/image/...",
-      "degree": "Honorary Doctor of Laws",
-      "field_of_study": null,
+      "schoolName": "Harvard University",
+      "schoolLogoUrl": "https://media.licdn.com/dms/image/...",
+      "degreeName": "Honorary Doctor of Laws",
+      "fieldOfStudy": null,
       "description": null,
-      "time_period": {
+      "timePeriod": {
         "startDate": {
           "year": 1973
         },
@@ -141,12 +139,23 @@ Open `http://localhost:8000/docs` in your browser to view the interactive API do
   "skills": [
     {
       "name": "Philanthropy"
-    },
-    {
-      "name": "Software Development"
     }
   ],
-  "certifications": [],
+  "certifications": [
+    {
+      "name": "Certified Professional Scraper",
+      "authority": "Scraper Corp",
+      "licenseNumber": "CPS-12345",
+      "timePeriod": {
+        "startDate": {
+          "year": 2020,
+          "month": 5
+        },
+        "endDate": null
+      },
+      "url": "https://cert.example.com/cps-12345"
+    }
+  ],
   "languages": [
     {
       "name": "English",
@@ -168,56 +177,60 @@ Open `http://localhost:8000/docs` in your browser to view the interactive API do
 }
 ```
 
----
+## Setup and Installation
 
-## 🚀 Public HTTPS Deployment
+1. **Clone project and initialize Virtual Environment**:
+```bash
+python -m venv venv
+source venv/bin/activate # On Windows use: venv\Scripts\activate
+```
 
-You can deploy this API publicly over HTTPS using cloud hosting platforms like **Vercel**, **Render**, or **Railway**.
+2. **Install Dependencies**:
+```bash
+pip install -r requirements.txt
+```
 
-### Option A: Vercel (Fastest & Serverless)
-Vercel supports Python serverless functions natively. We have pre-configured a `vercel.json` file in the root.
-1. Push this repository to GitHub.
-2. Sign up on [Vercel](https://vercel.com) and create a **New Project**.
-3. Import your GitHub repository.
-4. Vercel will automatically read the `vercel.json` configuration and select the Python runtime.
-5. In the **Environment Variables** section, add your credentials:
-   * `LINKEDIN_LI_AT` = *[your_li_at_cookie]*
-   * `LINKEDIN_JSESSIONID` = *[your_jsessionid_cookie]*
-6. Click **Deploy**. Vercel will deploy your API serverless and generate a public `https://[project-name].vercel.app` URL.
+3. **Configure Settings**:
+Copy `.env.example` to `.env` and fill in your active session credentials extracted from your browser inspector tab.
 
-### Option B: Render
-1. Push this repository to GitHub.
-2. Sign up on [Render](https://render.com) and create a new **Web Service**.
-3. Link your GitHub repository.
-4. Select **Python 3** as the runtime.
-5. Configure the build and start commands:
-   * **Build Command**: `pip install -r requirements.txt`
-   * **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-6. Add the following **Environment Variables** in the Render settings:
-   * `LINKEDIN_LI_AT` = *[your_li_at_cookie]*
-   * `LINKEDIN_JSESSIONID` = *[your_jsessionid_cookie]*
-7. Click **Deploy**. Render automatically provisions a public HTTPS endpoint.
+4. **Launch Local Server**:
+```bash
+uvicorn app.main:app --reload
+```
 
-### Option C: Railway
-1. Sign up on [Railway.app](https://railway.app).
-2. Create a new project and select **Deploy from GitHub**.
-3. Link this repository.
-4. Under **Variables**, add your environment variables (`LINKEDIN_LI_AT` and `LINKEDIN_JSESSIONID`).
-5. Railway will automatically detect the Python environment and run it. Go to service Settings and generate a public Domain (HTTPS).
+## Environment Variables
 
----
+| Variable | Description | Example |
+| :--- | :--- | :--- |
+| `LINKEDIN_LI_AT` | Active session authentication cookie value | `AQED...` |
+| `LINKEDIN_JSESSIONID` | CSRF token key value | `"ajax:XXXXXXXX"` |
+| `API_KEY_ENABLED` | Set `true` to enable X-API-Key route security | `false` |
+| `API_KEY` | Header key value matching `X-API-Key` | `secret-token` |
 
-## 🔍 Technical Approach & Architecture
+## Testing
 
-1. **Undocumented API Mapping**: This API directly targets LinkedIn’s private `voyager/api` endpoints (specifically `/identity/profiles/{public_id}/profileView` and `/identity/profiles/{public_id}/profileContactInfo`). This is the same API used by LinkedIn's official frontend application.
-2. **Cookie Auth Integration**: Rather than utilizing unstable browser logging sequences which trigger CAPTCHAs, we bind session cookies directly to the request headers. The `csrf-token` header is derived from `JSESSIONID` (by removing surrounding double-quotes), matching LinkedIn's custom security design.
-3. **Data Normalization**: Voyager responses are deeply nested Rest.li structures. The API flattens dates, experience records, logos, and language arrays into standard, predictable JSON structures using Pydantic validation.
+The project uses `pytest` for unit and integration testing. Real HTTP connections are mocked using static response fixtures to ensure fast, deterministic offline testing:
 
----
+```bash
+python -m pytest -v
+```
 
-## ⚠️ Limitations & Notes
+## Deployment
 
-* **Cookie Expiry**: LinkedIn session cookies (`li_at`) usually expire in about 6-12 months, or immediately if you manually log out of LinkedIn from the browser where the cookie was captured. If the API returns a authentication error, update your environment variables with new active cookies.
-* **Rate Limits**: LinkedIn tracks scraping requests closely. Running this API at high frequencies (e.g., thousands of requests a day on a single cookie set) will trigger safety checkpoints (such as temporary account holds or 429 requests). We recommend limiting requests, adding random delays between consecutive queries, or rotating account cookies if scraping at scale.
-* **Contact Information**: Details such as email and phone numbers are only returned if the account associated with the backend cookies is a **1st-degree connection** of the profile being requested. For other users, contact details are hidden by LinkedIn's default privacy rules.
-* **Disclaimer**: This tool is for educational purposes. Automated web scraping of LinkedIn violates LinkedIn's Terms of Service. Use it responsibly and at your own risk.
+### Render Blueprint
+This project is configured with a `render.yaml` specification for zero-config deployments. Simply push your code, import the service, and populate environment variables.
+
+### Railway / Vercel
+Deploy using the native Python runtime. Set your start command to:
+`uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+## Known Limitations
+
+* **Cookie Expiry**: The `li_at` cookie expires dynamically when you log out from your web browser sessions or after a duration determined by LinkedIn (typically 6-12 months).
+* **Rate Limiting**: Query frequencies are subject to LinkedIn rate limits. Running at excessive velocities may trigger temporary session suspension or require solving CAPTCHAs via web browser logins.
+* **Response Changes**: Undocumented internal APIs may change formats. The app handles this using a defensive parser that reports `LINKEDIN_RESPONSE_CHANGED` warnings when structural mismatches are detected.
+* **Privacy Restrictions**: Private profiles and certain contact information may only be accessible depending on the 1st-degree connection status of the authenticated session.
+
+## Security
+
+Private configuration keys, CSRF headers, and cookies must be stored strictly in the `.env` file. They are ignored by Git through `.gitignore` and must never be committed to shared repositories.
